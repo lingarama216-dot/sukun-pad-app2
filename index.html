@@ -1,119 +1,90 @@
+
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sukun Pad - Notes</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#121212" />
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #121212;
-      color: #e0e0e0;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 20px;
-      min-height: 100vh;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    h1 { 
-      color: #4CAF50; 
-      text-align: center; 
-      margin-bottom: 10px;
-      font-size: 28px;
-    }
-    p { 
-      text-align: center; 
-      color: #aaa; 
-      margin-bottom: 20px;
-    }
-    textarea {
-      width: 100%;
-      height: 60vh;
-      background: #1e1e1e;
-      color: white;
-      border: 2px solid #4CAF50;
-      border-radius: 12px;
-      padding: 15px;
-      font-size: 16px;
-      outline: none;
-      resize: none;
-    }
-    textarea:focus {
-      border-color: #66bb6a;
-    }
-    .btns {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-    button {
-      flex: 1;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button.clear {
-      background: #f44336;
-    }
-    .saved {
-      text-align: center;
-      color: #4CAF50;
-      margin-top: 10px;
-      font-size: 14px;
-      opacity: 0;
-      transition: 0.3s;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUKOON-PAD PRO</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{background:#000;color:#fff;padding:15px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+h1{color:#00f5ff;font-size:24px}
+.conn-btn{padding:10px 20px;border:2px solid #00f5ff;background:transparent;color:#00f5ff;border-radius:50px;cursor:pointer}
+.conn-btn.connected{border-color:#00ff00;color:#00ff00}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px}
+.zone-btn{padding:40px 10px;background:#111;border:2px solid #222;border-radius:20px;color:#fff;font-size:18px;font-weight:bold;cursor:pointer}
+.zone-btn.active{background:#003d4d;border-color:#00f5ff}
+.slider-box{background:#111;padding:20px;border-radius:20px;border:2px solid #222;margin-bottom:20px}
+input[type=range]{width:100%}
+.status{background:#111;padding:20px;border-radius:20px;border:2px solid #222}
+.stop{background:red;color:#fff;width:100%;padding:15px;border:none;border-radius:15px;font-size:18px;margin-top:15px;cursor:pointer}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Sukun Pad 📝</h1>
-    <p>Jo likhoge wo auto save ho jayega</p>
-    
-    <textarea id="note" placeholder="Yahan apne vichar likho..."></textarea>
-    
-    <div class="btns">
-      <button class="clear" onclick="clearNote()">Sab Delete</button>
-    </div>
-    <div class="saved" id="saved">✓ Saved</div>
+
+<div class="header">
+  <div>
+    <h1>SUKOON-PAD</h1>
+    <small>PRO MASSAGE SYSTEM</small>
   </div>
+  <button class="conn-btn" id="connectBtn" onclick="connect()">CONNECT</button>
+</div>
 
-  <script>
-    const note = document.getElementById('note');
-    const savedMsg = document.getElementById('saved');
-    let timeout;
+<div class="grid">
+  <button class="zone-btn" id="HEAD" onclick="send('HEAD')">🧠<br>HEAD</button>
+  <button class="zone-btn" id="BACK" onclick="send('BACK')">👤<br>BACK</button>
+  <button class="zone-btn" id="LEGS" onclick="send('LEGS')">🦶<br>LEGS</button>
+</div>
 
-    // Load
-    note.value = localStorage.getItem('sukunNote') || '';
-    
-    // Auto save
-    note.addEventListener('input', function() {
-      localStorage.setItem('sukunNote', this.value);
-      savedMsg.style.opacity = '1';
-      clearTimeout(timeout);
-      timeout = setTimeout(() => savedMsg.style.opacity = '0', 1000);
+<div class="slider-box">
+  <label>GLOBAL INTENSITY: <span id="val">50</span>%</label>
+  <input type="range" id="range" min="0" max="100" value="50" oninput="updateVal()">
+</div>
+
+<div class="status">
+  <h3>LIVE STATUS</h3>
+  <p>Connection: <span id="status">OFFLINE</span></p>
+  <p>Active Zone: <span id="zone">NONE</span></p>
+  <button class="stop" onclick="send('STOP')">STOP ALL</button>
+</div>
+
+<script>
+let device;
+let connected = false;
+
+async function connect(){
+  try{
+    device = await navigator.bluetooth.requestDevice({
+      filters:[{name:'SUKOON-PAD'}]
     });
+    await device.gatt.connect();
+    connected = true;
+    document.getElementById('connectBtn').innerText = 'CONNECTED';
+    document.getElementById('connectBtn').classList.add('connected');
+    document.getElementById('status').innerText = 'ONLINE';
+    document.getElementById('status').style.color = '#00ff00';
+  }catch(e){ alert("Connect failed") }
+}
 
-    function clearNote() {
-      if(confirm("Pakka sab delete karna hai?")) {
-        note.value = '';
-        localStorage.removeItem('sukunNote');
-      }
-    }
+function send(zone){
+  if(!connected){ alert("Pehle CONNECT karo"); return; }
+  let level = document.getElementById('range').value;
+  
+  // Sab button se active hatao
+  document.querySelectorAll('.zone-btn').forEach(b=>b.classList.remove('active'));
+  if(zone != 'STOP') document.getElementById(zone).classList.add('active');
+  
+  document.getElementById('zone').innerText = zone;
+  
+  // Yahan ESP32 ko data jayega
+  console.log("Sending:", zone, level);
+  alert(zone + " ON at " + level + "%");
+}
 
-    // PWA
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
-  </script>
+function updateVal(){
+  document.getElementById('val').innerText = document.getElementById('range').value;
+}
+</script>
 </body>
 </html>
