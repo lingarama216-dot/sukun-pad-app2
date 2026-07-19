@@ -3,31 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sukun Pad</title>
+  <title>Sukun Pad - Notes</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.png" />
   <meta name="theme-color" content="#121212" />
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: #121212;
-      color: white;
-      font-family: sans-serif;
-      text-align: center;
-      padding: 50px;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      min-height: 100vh;
     }
-    h1 { color: #4CAF50; }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 { 
+      color: #4CAF50; 
+      text-align: center; 
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    p { 
+      text-align: center; 
+      color: #aaa; 
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 60vh;
+      background: #1e1e1e;
+      color: white;
+      border: 2px solid #4CAF50;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 16px;
+      outline: none;
+      resize: none;
+    }
+    textarea:focus {
+      border-color: #66bb6a;
+    }
+    .btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    button {
+      flex: 1;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button.clear {
+      background: #f44336;
+    }
+    .saved {
+      text-align: center;
+      color: #4CAF50;
+      margin-top: 10px;
+      font-size: 14px;
+      opacity: 0;
+      transition: 0.3s;
+    }
   </style>
 </head>
 <body>
-  <h1>Sukun Pad</h1>
-  <p>App Ready Hai ✅</p>
+  <div class="container">
+    <h1>Sukun Pad 📝</h1>
+    <p>Jo likhoge wo auto save ho jayega</p>
+    
+    <textarea id="note" placeholder="Yahan apne vichar likho..."></textarea>
+    
+    <div class="btns">
+      <button class="clear" onclick="clearNote()">Sab Delete</button>
+    </div>
+    <div class="saved" id="saved">✓ Saved</div>
+  </div>
 
   <script>
+    const note = document.getElementById('note');
+    const savedMsg = document.getElementById('saved');
+    let timeout;
+
+    // Load
+    note.value = localStorage.getItem('sukunNote') || '';
+    
+    // Auto save
+    note.addEventListener('input', function() {
+      localStorage.setItem('sukunNote', this.value);
+      savedMsg.style.opacity = '1';
+      clearTimeout(timeout);
+      timeout = setTimeout(() => savedMsg.style.opacity = '0', 1000);
+    });
+
+    function clearNote() {
+      if(confirm("Pakka sab delete karna hai?")) {
+        note.value = '';
+        localStorage.removeItem('sukunNote');
+      }
+    }
+
+    // PWA
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-      .then(() => console.log('Service Worker Registered'))
-      .catch(err => console.log('SW registration failed:', err));
+      navigator.serviceWorker.register('service-worker.js');
     }
   </script>
 </body>
-  </html>
+</html>
