@@ -1,134 +1,83 @@
 
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEServer.h>
-#include <BLE2902.h>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUKOON-PAD PRO</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{background:#000;color:#fff;padding:15px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+h1{color:#00f5ff;font-size:24px}
+.conn-btn{padding:10px 20px;border:2px solid #00f5ff;background:transparent;color:#00f5ff;border-radius:50px;cursor:pointer}
+.conn-btn.connected{border-color:#00ff00;color:#00ff00}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px}
+.zone-btn{padding:40px 10px;background:#111;border:2px solid #222;border-radius:20px;color:#fff;font-size:18px;font-weight:bold;cursor:pointer}
+.zone-btn.active{background:#003d4d;border-color:#00f5ff}
+.status{background:#111;padding:20px;border-radius:20px;border:2px solid #222}
+.stop{background:red;color:#fff;width:100%;padding:15px;border:none;border-radius:15px;font-size:18px;margin-top:15px;cursor:pointer}
+</style>
+</head>
+<body>
 
-// ===== MOTOR PINS =====
-const int motorHead = 25;  // Head motor relay
-const int motorBack = 26;  // Back motor relay  
-const int motorLegs = 27;  // Legs motor relay
+<div class="header">
+  <div>
+    <h1>SUKOON-PAD</h1>
+    <small>PRO MASSAGE SYSTEM</small>
+  </div>
+  <button class="conn-btn" id="connectBtn" onclick="connect()">CONNECT</button>
+</div>
 
-// ===== BLE SETUP =====
-#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26d8"
+<div class="grid">
+  <button class="zone-btn" id="HEAD" onclick="send('HEAD')">🧠<br>HEAD</button>
+  <button class="zone-btn" id="BACK" onclick="send('BACK')">👤<br>BACK</button>
+  <button class="zone-btn" id="LEGS" onclick="send('LEGS')">🦶<br>LEGS</button>
+</div>
 
-bool deviceConnected = false;
-int currentIntensity = 50;
-String currentZone = "NONE";
-String currentMode = "KNEAD";
+<div class="status">
+  <h3>LIVE STATUS</h3>
+  <p>Connection: <span id="status">OFFLINE</span></p>
+  <p>Last Command: <span id="zone">NONE</span></p>
+  <button class="stop" onclick="send('STOP')">STOP ALL</button>
+</div>
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-      Serial.println("Device Connected");
-    };
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-      stopAllMotors(); // Disconnect hote hi sab band
-      Serial.println("Device Disconnected");
-    }
-};
+<script>
+let device;
+let server;
+let characteristic;
 
-class MyCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string value = pCharacteristic->getValue();
-      if (value.length() > 0) {
-        String command = String(value.c_str());
-        Serial.println("Command: " + command);
-        handleCommand(command);
-      }
-    }
-};
+const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b2663";
 
-// ===== MOTOR CONTROL FUNCTIONS =====
-void stopAllMotors() {
-  digitalWrite(motorHead, LOW);
-  digitalWrite(motorBack, LOW);
-  digitalWrite(motorLegs, LOW);
-  currentZone = "NONE";
-  Serial.println("All Motors STOP");
-}
-
-void runMotor(int pin, int intensity) {
-  // Intensity 0-100 ko PWM 0-255 me convert
-  int pwmValue = map(intensity, 0, 100, 0, 255);
-  analogWrite(pin, pwmValue);
-}
-
-void handleCommand(String cmd) {
-  // Format: ZONE|MODE|INTENSITY|TIME
-  // Example: HEAD|KNEAD|70|15
-  
-  if(cmd == "STOP") {
-    stopAllMotors();
-    return;
-  }
-
-  // Zone alag karo
-  if(cmd.indexOf("HEAD") >= 0) {
-    stopAllMotors();
-    currentZone = "HEAD";
-    runMotor(motorHead, currentIntensity);
-  }
-  else if(cmd.indexOf("BACK") >= 0) {
-    stopAllMotors();
-    currentZone = "BACK";
-    runMotor(motorBack, currentIntensity);
-  }
-  else if(cmd.indexOf("LEGS") >= 0) {
-    stopAllMotors();
-    currentZone = "LEGS";
-    runMotor(motorLegs, currentIntensity);
-  }
-
-  // Intensity nikalna
-  if(cmd.indexOf("|") >= 0) {
-    int firstBar = cmd.indexOf("|");
-    int secondBar = cmd.indexOf("|", firstBar + 1);
-    int thirdBar = cmd.indexOf("|", secondBar + 1);
+async function connect(){
+  try{
+    device = await navigator.bluetooth.requestDevice({
+      filters:[{name:'SUKOON-PAD'}],
+      optionalServices:[SERVICE_UUID]
+    });
+    server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+    characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
     
-    currentMode = cmd.substring(firstBar + 1, secondBar);
-    currentIntensity = cmd.substring(secondBar + 1, thirdBar).toInt();
-    
-    Serial.print("Mode: "); Serial.print(currentMode);
-    Serial.print(" Intensity: "); Serial.println(currentIntensity);
-  }
+    document.getElementById('connectBtn').innerText = 'CONNECTED';
+    document.getElementById('connectBtn').classList.add('connected');
+    document.getElementById('status').innerText = 'ONLINE';
+    document.getElementById('status').style.color = '#00ff00';
+  }catch(e){ alert("Connect failed: " + e) }
 }
 
-void setup() {
-  Serial.begin(115200);
+async function send(zone){
+  if(!characteristic){ alert("Pehle CONNECT karo"); return; }
   
-  // Motor pins ko output banao
-  pinMode(motorHead, OUTPUT);
-  pinMode(motorBack, OUTPUT);
-  pinMode(motorLegs, OUTPUT);
-  stopAllMotors();
-
-  // BLE Start
-  BLEDevice::init("SUKOON-PAD");
-  BLEServer *pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new MyServerCallbacks());
-
-  BLEService *pService = pServer->createService(SERVICE_UUID);
-
-  BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-                                         CHARACTERISTIC_UUID,
-                                         BLECharacteristic::PROPERTY_WRITE
-                                       );
-
-  pCharacteristic->setCallbacks(new MyCallbacks());
-
-  pService->start();
+  document.querySelectorAll('.zone-btn').forEach(b=>b.classList.remove('active'));
+  if(zone != 'STOP') document.getElementById(zone).classList.add('active');
   
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(SERVICE_UUID);
-  pAdvertising->start();
+  document.getElementById('zone').innerText = zone;
   
-  Serial.println("SUKOON-PAD READY. Waiting for connection...");
+  let encoder = new TextEncoder();
+  await characteristic.writeValue(encoder.encode(zone));
 }
-
-void loop() {
-  // Yahan timer ka code daal sakte hain baad me
-  delay(1000);
-}
+</script>
+</body>
+</html>
