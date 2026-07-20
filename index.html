@@ -1,47 +1,39 @@
-
 <!DOCTYPE html>
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SUKOON-PAD PRO REMOTE V3.2</title>
+<title>SUKOON-PAD PRO V4</title>
 <style>
   *{box-sizing:border-box}
   body { background: #000; color: #00ffff; font-family: Arial; margin: 0; padding: 8px; }
-  
   .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00ffff; padding-bottom: 8px; }
-  .mission-name { font-size: 13px; font-weight: bold; }
-  .status-bar { display: flex; gap: 6px; align-items: center; font-size: 10px; }
-  
+  .mission-name { font-size: 14px; font-weight: bold; }
+  .status-bar { display: flex; gap: 6px; align-items: center; font-size: 11px; }
   .light { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-  .light.red { background: red; box-shadow: 0 0 5px red; }
-  .light.blue { background: #00aaff; box-shadow: 0 0 8px #00aaff; }
-  .light.green { background: #00ff00; box-shadow: 0 0 8px #00ff00; }
-  
-  /* BODY BADI KAR DI */
+  .light.red { background: red; } .light.blue { background: #00aaff; } .light.green { background: #00ff00; }
   .body-section { text-align: center; margin: 10px 0; }
-  .body-svg { width: 95%; max-width: 320px; height: 380px; background:#001a1a; border-radius:10px; border:1px solid #00ffff; }
-  .body-part { fill: #004444; stroke: #00ffff; stroke-width: 2; cursor: pointer; transition:0.2s; }
-  .body-part:hover { fill:#006666; }
-  .body-part.active { fill: #00ffff; stroke:#ffff00; stroke-width:3; }
+  .body-svg { width: 95%; max-width: 300px; height: 350px; background:#001a1a; border-radius:10px; border:1px solid #00ffff; }
+  .body-part { fill: #004444; stroke: #00ffff; stroke-width: 2; cursor: pointer; }
+  .body-part.active { fill: #00ffff; }
   #partName { font-size: 16px; margin-top: 8px; color: #ffff00; font-weight:bold; }
-
   .controls { background: #111; padding: 12px; border-radius: 10px; border: 1px solid #00ffff; }
   .vol-control { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 12px 0; }
   .vol-btn { width: 55px; height: 55px; font-size: 28px; background: #00ffff; color: #000; border: none; border-radius: 50%; font-weight: bold; }
   .vol-display { font-size: 22px; font-weight: bold; color: #ffff00; min-width:60px; text-align:center; }
   .mode-btns { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
   .mode-btns button { padding: 10px; background:#222; color:#00ffff; border:1px solid #00ffff; border-radius:5px; }
-  .main-btns { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:12px; }
+  .main-btns { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; }
   .main-btns button { padding: 14px; font-size: 15px; border:none; border-radius:5px; font-weight:bold; }
   .status-box { background: #001a1a; padding: 12px; border-radius: 10px; border: 1px dashed #00ffff; margin-top: 12px; }
   h3{margin:8px 0; text-align:center;}
+  input{width:100%; padding:8px; background:#222; color:#00ffff; border:1px solid #00ffff; border-radius:5px; margin:5px 0;}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="mission-name">SUKOON-PAD V3.2</div>
+  <div class="mission-name">SUKOON-PAD V4</div>
   <div class="status-bar">
     <span>📶</span><span id="btLight" class="light red"></span>
     <span>📡</span><span id="wifiLight" class="light red"></span>
@@ -51,7 +43,6 @@
 
 <div class="body-section">
   <h3>SELECT BODY PART</h3>
-  <!-- BODY BADI + CLEAR -->
   <svg class="body-svg" viewBox="0 0 100 200">
     <circle class="body-part" id="head" cx="50" cy="18" r="14"/>
     <rect class="body-part" id="chest" x="35" y="35" width="30" height="25" rx="5"/>
@@ -62,12 +53,20 @@
 </div>
 
 <div class="controls">
-  <h3>REMOTE CONTROL</h3>
+  <h3>CONNECTION</h3>
+  <!-- NAYA: WIFI IP DALNE KA BOX -->
+  <input type="text" id="espIp" placeholder="ESP32 ka WiFi IP daalo: 192.168.4.1">
   
+  <div class="main-btns">
+    <button id="connectBT" style="background:#00aaff; color:#fff;">BLUETOOTH CONNECT</button>
+    <button id="connectWifi" style="background:#00ff00; color:#000;">WIFI CONNECT</button>
+  </div>
+
+  <h3 style="margin-top:15px;">REMOTE CONTROL</h3>
   <label><b>VOLUME / POWER</b></label>
   <div class="vol-control">
     <button class="vol-btn" id="volDown">-</button>
-    <div class="vol-display" id="pVal">50%</div>
+    <div class="vol-display" id="pVal">50</div>
     <button class="vol-btn" id="volUp">+</button>
   </div>
 
@@ -80,12 +79,93 @@
 
   <label><b>MODE</b></label>
   <div class="mode-btns">
-    <button onclick="setMode('Knock', this)">KNOCK</button>
-    <button onclick="setMode('Vibration', this)">VIBRATION</button>
-    <button onclick="setMode('Heat', this)">HEAT</button>
-    <button onclick="setMode('Auto', this)">AUTO</button>
+    <button onclick="setMode('Knock')">KNOCK</button>
+    <button onclick="setMode('Vibration')">VIBRATION</button>
+    <button onclick="setMode('Heat')">HEAT</button>
+    <button onclick="setMode('Auto')">AUTO</button>
   </div>
 
   <div class="main-btns">
-    <button id="connectBtn" style="background:#00aaff; color:#fff;">CONNECT</button>
-    <button id="startBtn" style="background:#00ff
+    <button id="startBtn" style="background:#00ff00;">START</button>
+    <button id="stopBtn" style="background:#ff0000; color:#fff;">STOP</button>
+  </div>
+</div>
+
+<div class="status-box">
+  <h3>📊 LIVE STATUS</h3>
+  <div id="liveStatus">Machine Band Hai</div>
+</div>
+
+<script>
+let selectedPart = "head";
+let power = 50;
+let speed = 3;
+let mode = "Knock";
+let bleServer;
+let wifiMode = false;
+
+// Body part
+document.querySelectorAll('.body-part').forEach(part => {
+  part.onclick = () => {
+    document.querySelectorAll('.body-part').forEach(p => p.classList.remove('active'));
+    part.classList.add('active');
+    selectedPart = part.id;
+    document.getElementById('partName').innerText = selectedPart.toUpperCase() + " SELECTED";
+  }
+});
+
+// Volume
+document.getElementById('volUp').onclick = () => { if(power < 100) power += 5; updateDisplay(); sendData(); }
+document.getElementById('volDown').onclick = () => { if(power > 0) power -= 5; updateDisplay(); sendData(); }
+document.getElementById('spdUp').onclick = () => { if(speed < 5) speed += 1; updateDisplay(); sendData(); }
+document.getElementById('spdDown').onclick = () => { if(speed > 1) speed -= 1; updateDisplay(); sendData(); }
+function setMode(m) { mode = m; updateDisplay(); sendData(); }
+function updateDisplay() {
+  document.getElementById('pVal').innerText = power;
+  document.getElementById('sVal').innerText = speed;
+}
+
+// 1. BLUETOOTH CONNECT ASLI WALA
+document.getElementById('connectBT').onclick = async () => {
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{name: 'SUKOON-PAD'}],
+      optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
+    });
+    bleServer = await device.gatt.connect();
+    document.getElementById('btLight').className = 'light blue';
+    document.getElementById('statusText').innerText = "BT CONNECTED";
+    alert("Bluetooth Jud Gaya!");
+  } catch(e) { alert("BT Error: " + e); }
+}
+
+// 2. WIFI CONNECT ASLI WALA
+document.getElementById('connectWifi').onclick = () => {
+  let ip = document.getElementById('espIp').value;
+  if(ip == "") { alert("Pehle ESP32 ka IP daalo"); return; }
+  wifiMode = true;
+  document.getElementById('wifiLight').className = 'light green';
+  document.getElementById('statusText').innerText = "WIFI CONNECTED";
+  alert("WiFi Jud Gaya: " + ip);
+}
+
+// 3. START STOP ASLI ME DATA BHEJEGA
+function sendData() {
+  let data = `${selectedPart},${mode},${power},${speed}`;
+  document.getElementById('liveStatus').innerHTML = `Bhej raha: <b>${data}</b>`;
+  
+  if(wifiMode) {
+    // WIFI SE BHEJEGA
+    let ip = document.getElementById('espIp').value;
+    fetch(`http://${ip}/control?data=${data}`);
+  } else if(bleServer) {
+    // BT SE BHEJEGA - ESP32 CODE CHAHIYE HOGA
+    console.log("BT Data:", data);
+  }
+}
+
+document.getElementById('startBtn').onclick = () => { sendData(); }
+document.getElementById('stopBtn').onclick = () => { power=0; sendData(); }
+</script>
+</body>
+ </html>
