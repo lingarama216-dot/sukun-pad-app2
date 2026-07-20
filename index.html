@@ -1,83 +1,90 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SUKOON-PAD PRO</title>
+<title>SUKOON-PAD PRO CONSOLE</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
-body{background:#000;color:#fff;padding:15px}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-h1{color:#00f5ff;font-size:24px}
-.conn-btn{padding:10px 20px;border:2px solid #00f5ff;background:transparent;color:#00f5ff;border-radius:50px;cursor:pointer}
-.conn-btn.connected{border-color:#00ff00;color:#00ff00}
-.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px}
-.zone-btn{padding:40px 10px;background:#111;border:2px solid #222;border-radius:20px;color:#fff;font-size:18px;font-weight:bold;cursor:pointer}
-.zone-btn.active{background:#003d4d;border-color:#00f5ff}
-.status{background:#111;padding:20px;border-radius:20px;border:2px solid #222}
-.stop{background:red;color:#fff;width:100%;padding:15px;border:none;border-radius:15px;font-size:18px;margin-top:15px;cursor:pointer}
+  body { background: #0a0a0a; color: #00ffff; font-family: 'Orbitron', sans-serif; margin: 0; padding: 20px; }
+  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00ffff; padding-bottom: 10px; }
+  .mission-name { font-size: 24px; font-weight: bold; }
+  .status-bar { display: flex; gap: 20px; align-items: center; }
+  .signal { width: 20px; height: 20px; border-radius: 50%; background: red; box-shadow: 0 0 10px red; }
+  .signal.online { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+  .bluetooth-icon::before { content: "📶"; } /* Bluetooth Icon */
+  .wifi-icon::before { content: "📡"; } /* Wifi Icon */
+  .body-map { text-align: center; margin: 20px 0; }
+  .body-map img { width: 200px; filter: drop-shadow(0 0 10px #00ffff); }
+  .controls { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #00ffff; }
+  input[type=range] { width: 100%; }
+  button { background: #00ffff; color: #000; border: none; padding: 10px 20px; margin: 5px; font-weight: bold; cursor: pointer; }
+  .notes { margin-top: 20px; background: #111; padding: 15px; border-left: 3px solid #00ffff; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div>
-    <h1>SUKOON-PAD</h1>
-    <small>PRO MASSAGE SYSTEM</small>
+  <div class="mission-name">MISSION: SUKOON-PAD V1</div>
+  <div class="status-bar">
+    <span class="bluetooth-icon"></span>
+    <span class="wifi-icon"></span>
+    <span id="signal" class="signal"></span>
+    <span id="statusText">OFFLINE</span>
   </div>
-  <button class="conn-btn" id="connectBtn" onclick="connect()">CONNECT</button>
 </div>
 
-<div class="grid">
-  <button class="zone-btn" id="HEAD" onclick="send('HEAD')">🧠<br>HEAD</button>
-  <button class="zone-btn" id="BACK" onclick="send('BACK')">👤<br>BACK</button>
-  <button class="zone-btn" id="LEGS" onclick="send('LEGS')">🦶<br>LEGS</button>
+<div class="body-map">
+  <h2>SELECT BODY PART</h2>
+  <img src="https://i.imgur.com/8KmNp3b.png" alt="Body Outline"> <!-- Body ki photo -->
 </div>
 
-<div class="status">
-  <h3>LIVE STATUS</h3>
-  <p>Connection: <span id="status">OFFLINE</span></p>
-  <p>Last Command: <span id="zone">NONE</span></p>
-  <button class="stop" onclick="send('STOP')">STOP ALL</button>
+<div class="controls">
+  <h3>CONTROL PANEL</h3>
+  <label>Power: <input type="range" id="power" min="0" max="100" value="50"></label> <span id="pVal">50%</span><br>
+  <label>Speed: <input type="range" id="speed" min="1" max="5" value="3"></label> <span id="sVal">3</span><br>
+  <label>Mode: 
+    <select id="mode">
+      <option>Knock</option>
+      <option>Vibration</option>
+      <option>Heat</option>
+      <option>Auto</option>
+    </select>
+  </label><br><br>
+  <button id="connectBtn">CONNECT</button>
+  <button id="startBtn">START</button>
+  <button id="stopBtn">STOP</button>
+</div>
+
+<div class="notes">
+  <h3>📝 USAGE NOTES</h3>
+  <b>HEAD:</b> Sar ke pichhe 10 min <br>
+  <b>BACK:</b> Reedh ke dono taraf 15 min <br>
+  <b>LEGS:</b> Pindli aur talwe 20 min
 </div>
 
 <script>
-let device;
-let server;
-let characteristic;
+let device, server, characteristic;
+const signal = document.getElementById('signal');
+const statusText = document.getElementById('statusText');
 
-const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b2663";
-
-async function connect(){
-  try{
+document.getElementById('connectBtn').onclick = async () => {
+  try {
     device = await navigator.bluetooth.requestDevice({
-      filters:[{name:'SUKOON-PAD'}],
-      optionalServices:[SERVICE_UUID]
+      filters: [{name: 'SUKOON-PAD'}],
+      optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
     });
     server = await device.gatt.connect();
-    const service = await server.getPrimaryService(SERVICE_UUID);
-    characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-    
-    document.getElementById('connectBtn').innerText = 'CONNECTED';
-    document.getElementById('connectBtn').classList.add('connected');
-    document.getElementById('status').innerText = 'ONLINE';
-    document.getElementById('status').style.color = '#00ff00';
-  }catch(e){ alert("Connect failed: " + e) }
+    signal.classList.add('online');
+    statusText.innerText = "ONLINE";
+  } catch(e) {
+    signal.classList.remove('online');
+    statusText.innerText = "OFFLINE";
+  }
 }
 
-async function send(zone){
-  if(!characteristic){ alert("Pehle CONNECT karo"); return; }
-  
-  document.querySelectorAll('.zone-btn').forEach(b=>b.classList.remove('active'));
-  if(zone != 'STOP') document.getElementById(zone).classList.add('active');
-  
-  document.getElementById('zone').innerText = zone;
-  
-  let encoder = new TextEncoder();
-  await characteristic.writeValue(encoder.encode(zone));
-}
+// Slider value update
+document.getElementById('power').oninput = e => document.getElementById('pVal').innerText = e.target.value + '%';
+document.getElementById('speed').oninput = e => document.getElementById('sVal').innerText = e.target.value;
 </script>
 </body>
-</html>
+  </html>
