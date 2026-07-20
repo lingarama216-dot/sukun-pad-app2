@@ -1,16 +1,23 @@
+
 <!DOCTYPE html>
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SUKOON-PAD PRO REMOTE</title>
+<title>SUKOON-PAD PRO REMOTE V3</title>
 <style>
   body { background: #050505; color: #00ffff; font-family: Arial; margin: 0; padding: 10px; }
+  
+  /* HEADER */
   .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #00ffff; padding-bottom: 8px; }
-  .mission-name { font-size: 18px; font-weight: bold; }
-  .status-bar { display: flex; gap: 10px; align-items: center; }
-  .signal { width: 15px; height: 15px; border-radius: 50%; background: red; }
-  .signal.online { background: #00ff00; box-shadow: 0 0 8px #00ff00; }
+  .mission-name { font-size: 16px; font-weight: bold; }
+  .status-bar { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+  
+  /* LIGHT CSS */
+  .light { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .light.red { background: red; box-shadow: 0 0 5px red; }
+  .light.blue { background: #00aaff; box-shadow: 0 0 8px #00aaff; } /* BT ON */
+  .light.green { background: #00ff00; box-shadow: 0 0 8px #00ff00; } /* WIFI ON */
   
   .body-section { text-align: center; margin: 15px 0; }
   .body-svg { width: 90%; max-width: 300px; height: 350px; }
@@ -19,25 +26,21 @@
   #partName { font-size: 16px; margin-top: 8px; color: #ffff00; }
 
   .controls { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #00ffff; }
-  
-  /* NAYE VOLUME BUTTON */
   .vol-control { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0; }
   .vol-btn { width: 60px; height: 60px; font-size: 30px; background: #00ffff; color: #000; border: none; border-radius: 50%; font-weight: bold; }
   .vol-display { font-size: 24px; font-weight: bold; color: #ffff00; }
-
-  .mode-btns button { width: 48%; margin: 2px; padding: 10px; }
-  .main-btns button { width: 32%; padding: 15px; font-size: 16px; }
-
+  .mode-btns button { width: 48%; margin: 2px; padding: 10px; background:#222; color:#00ffff; border:1px solid #00ffff; }
+  .main-btns button { width: 32%; padding: 15px; font-size: 16px; border:none; border-radius:5px; }
   .status-box { background: #001a1a; padding: 15px; border-radius: 10px; border: 1px dashed #00ffff; margin-top: 15px; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="mission-name">MISSION: SUKOON-PAD V2</div>
+  <div class="mission-name">MISSION: SUKOON-PAD V3</div>
   <div class="status-bar">
-    <span>📶</span> <span>📡</span>
-    <span id="signal" class="signal"></span>
+    <span>📶</span><span id="btLight" class="light red"></span>  <!-- BT LIGHT -->
+    <span>📡</span><span id="wifiLight" class="light red"></span> <!-- WIFI LIGHT -->
     <span id="statusText">OFFLINE</span>
   </div>
 </div>
@@ -45,79 +48,4 @@
 <div class="body-section">
   <h3>SELECT BODY PART</h3>
   <svg class="body-svg" viewBox="0 0 100 200">
-    <circle class="body-part" id="head" cx="50" cy="15" r="12"/>
-    <rect class="body-part" id="back" x="35" y="30" width="30" height="60" rx="5"/>
-    <rect class="body-part" id="legs" x="40" y="95" width="20" height="80" rx="5"/>
-  </svg>
-  <div id="partName">Pehle Part Select Karo</div>
-</div>
-
-<div class="controls">
-  <h3>REMOTE CONTROL</h3>
-  
-  <!-- VOLUME BUTTON SYSTEM -->
-  <label><b>VOLUME / POWER</b></label>
-  <div class="vol-control">
-    <button class="vol-btn" id="volDown">-</button>
-    <div class="vol-display" id="pVal">50%</div>
-    <button class="vol-btn" id="volUp">+</button>
-  </div>
-
-  <label><b>SPEED</b></label>
-  <div class="vol-control">
-    <button class="vol-btn" id="spdDown">-</button>
-    <div class="vol-display" id="sVal">3</div>
-    <button class="vol-btn" id="spdUp">+</button>
-  </div>
-
-  <label><b>MODE</b></label>
-  <div class="mode-btns">
-    <button onclick="setMode('Knock')">KNOCK</button>
-    <button onclick="setMode('Vibration')">VIBRATION</button>
-    <button onclick="setMode('Heat')">HEAT</button>
-    <button onclick="setMode('Auto')">AUTO</button>
-  </div>
-
-  <div class="main-btns" style="margin-top:15px;">
-    <button id="connectBtn">CONNECT</button>
-    <button id="startBtn" style="background:#00ff00;">START</button>
-    <button id="stopBtn" style="background:#ff0000; color:#fff;">STOP</button>
-  </div>
-</div>
-
-<div class="status-box">
-  <h3>📊 LIVE STATUS</h3>
-  <div id="liveStatus">Machine Band Hai</div>
-</div>
-
-<script>
-let selectedPart = "None";
-let power = 50;
-let speed = 3;
-let mode = "Knock";
-let device;
-
-// Body part
-document.querySelectorAll('.body-part').forEach(part => {
-  part.onclick = () => {
-    document.querySelectorAll('.body-part').forEach(p => p.classList.remove('active'));
-    part.classList.add('active');
-    selectedPart = part.id.toUpperCase();
-    document.getElementById('partName').innerText = selectedPart + " SELECTED";
-  }
-});
-
-// Volume + - Button
-document.getElementById('volUp').onclick = () => { if(power < 100) power += 5; updateDisplay(); }
-document.getElementById('volDown').onclick = () => { if(power > 0) power -= 5; updateDisplay(); }
-document.getElementById('spdUp').onclick = () => { if(speed < 5) speed += 1; updateDisplay(); }
-document.getElementById('spdDown').onclick = () => { if(speed > 1) speed -= 1; updateDisplay(); }
-
-function setMode(m) { mode = m; updateDisplay(); }
-function updateDisplay() {
-  document.getElementById('pVal').innerText = power + '%';
-  document.getElementById('sVal').innerText = speed;
-}
-
-// Connect
-document.getElementById('connectBtn').onclick = async
+    <circle class="body-part" id="head" cx="
